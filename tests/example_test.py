@@ -116,16 +116,28 @@ class ExampleTestCase(unittest.TestCase):
         actions.click(interests)
         actions.perform()
 
-        #comp_interests = interests_wrapper.find_element_by_xpath(
-        #   "//label[text()[contains(., 'Компьютерная техника и программы')]]")
+        WebDriverWait(self.driver, 30, 1).until(
+            lambda d: d.find_element_by_css_selector(
+                '[data-node-id=interests]')
+        ).click()
+
+        WebDriverWait(self.driver, 30, 1).until(
+            lambda d: d.find_element_by_xpath(
+                '//label[contains(text(), "Компьютерная техника и программы")]'
+            )
+        ).click()
 
         #comp_interests.find_element_by_class_name('tree__node__collapse-icon').click()
 
         banner_form = self.driver.find_element_by_class_name('banner-form')
-        input = banner_form.find_element_by_xpath('.//input[@data-name="title"]')
-        input.send_keys('see?')
-        #banner_form.find_element_by_class_name('banner-form__input').click().send_keys('see?')
+        title = banner_form.find_element_by_xpath('.//input[@data-name="title"]')
+        title.send_keys('see?')
+        text = banner_form.find_element_by_xpath('.//textarea[@data-name="text"]')
+        text.send_keys('see?')
+        url = banner_form.find_element_by_xpath('.//li[@data-top="false"]//input[@data-name="url"]')
+        url.send_keys('see@see.see')
 
+        #banner_form.find_element_by_class_name('banner-form__input').click().send_keys('see?')
 
         import time
         time.sleep(10)
