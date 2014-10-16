@@ -92,6 +92,7 @@ class ExampleTestCase(unittest.TestCase):
         self.addCleanup(self.driver.quit)
 
     def test_wat(self):
+        import time
         auth_page = AuthPage(self.driver)
         auth_page.open()
         auth_form = auth_page.form
@@ -103,18 +104,14 @@ class ExampleTestCase(unittest.TestCase):
 
         create_page = CreatePage(self.driver)
         create_page.open()
-        email = TopMenu.get_email(create_page.top_menu)
-        self.assertEqual(Credentials.TTHA2LOGIN + Credentials.DOMAIN, email)
+        #email = TopMenu.get_email(create_page.top_menu)
+        #self.assertEqual(Credentials.TTHA2LOGIN + Credentials.DOMAIN, email)
 
-        interests_wrapper = WebDriverWait(self.driver, 30, 0.1).until(
-            lambda d: d.find_element_by_class_name('campaign-setting__wrapper_interests')
+        base_setting_box = WebDriverWait(self.driver, 30, 1).until(
+            lambda d: d.find_element_by_class_name(
+                'base-setting__row__body')
         )
-        interests = interests_wrapper.find_element_by_class_name("campaign-setting__value")
-        actions = ActionChains(self.driver)
-        actions.move_to_element(interests_wrapper)
-        actions.perform()
-        actions.click(interests)
-        actions.perform()
+        base_setting_box.find_element_by_xpath('.//input[@data-name="external_feed_abstract"]').click()
 
         WebDriverWait(self.driver, 30, 1).until(
             lambda d: d.find_element_by_css_selector(
@@ -127,6 +124,14 @@ class ExampleTestCase(unittest.TestCase):
             )
         ).click()
 
+        income_group = self.driver.find_element_by_css_selector('[data-name="income_group"]')
+        income_group.find_element_by_class_name('campaign-setting__value').click()
+        WebDriverWait(income_group, 30, 1).until(
+            lambda d: d.find_element_by_xpath(
+                '//label[contains(text(), "Выше среднего")]'
+            )
+        ).click()
+        #time.sleep(5)
         #comp_interests.find_element_by_class_name('tree__node__collapse-icon').click()
 
         banner_form = self.driver.find_element_by_class_name('banner-form')
@@ -135,14 +140,26 @@ class ExampleTestCase(unittest.TestCase):
         text = banner_form.find_element_by_xpath('.//textarea[@data-name="text"]')
         text.send_keys('see?')
         url = banner_form.find_element_by_xpath('.//li[@data-top="false"]//input[@data-name="url"]')
-        url.send_keys('see@see.see')
+        url.send_keys('see.see')
+        image = banner_form.find_element_by_xpath('.//input[@data-name="image"]')
+        image.send_keys('/home/snake/Pictures/11.jpg')
 
+        WebDriverWait(banner_form, 30, 1).until(
+            lambda d: d.find_element_by_css_selector("[class=banner-preview__img]")
+        )
         #banner_form.find_element_by_class_name('banner-form__input').click().send_keys('see?')
 
-        import time
-        time.sleep(10)
+        #import time
+        time.sleep(5)
+        submit = banner_form.find_element_by_class_name('banner-form__save-button')
+        submit.click()
 
-
+        self.driver.find_element_by_class_name("main-button-new").click()
+        title = WebDriverWait(self.driver, 30, 1).until(
+            lambda d: d.find_element_by_class_name("campaign-title")
+        )
+        campaign_name = title.find_element_by_class_name("campaign-title__name").text
+        self.assertEqual(campaign_name, u'Новая кампания 2014-10-17')
         # elem.send_keys('see?' + Keys.RETURN)
 
 
