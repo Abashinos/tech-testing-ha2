@@ -5,13 +5,13 @@ import os
 import unittest
 import urlparse
 
-from selenium.webdriver import DesiredCapabilities, Remote, ActionChains
+from selenium.webdriver import DesiredCapabilities, Remote
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.support.wait import WebDriverWait
 
 
-class Credentials():
+class Credentials(object):
     TTHA2LOGIN = 'tech-testing-ha2-1'
     TTHA2PASSWORD = 'Pa$$w0rD-1'
     DOMAIN = '@bk.ru'
@@ -106,34 +106,64 @@ class ExampleTestCase(unittest.TestCase):
         create_page.open()
         #email = TopMenu.get_email(create_page.top_menu)
         #self.assertEqual(Credentials.TTHA2LOGIN + Credentials.DOMAIN, email)
+        """ Название кампании """
+        name_box = WebDriverWait(self.driver, 30, 1).until(
+            lambda d: d.find_element_by_class_name(
+                'base-setting__campaign-name')
+        )
+        name_field = name_box.find_element_by_css_selector('[type="text"]')
+        name_field.send_keys(Keys.CONTROL, "a")
+        name_field.send_keys("Campaign")
 
+        """ Площадка размещения """
         base_setting_box = WebDriverWait(self.driver, 30, 1).until(
             lambda d: d.find_element_by_class_name(
                 'base-setting__row__body')
         )
         base_setting_box.find_element_by_xpath('.//input[@data-name="external_feed_abstract"]').click()
 
-        WebDriverWait(self.driver, 30, 1).until(
-            lambda d: d.find_element_by_css_selector(
-                '[data-node-id=interests]')
-        ).click()
+        """ Интересы """
+        interests = WebDriverWait(self.driver, 30, 1).until(
+            lambda d: d.find_element_by_class_name(
+                'campaign-setting__wrapper_interests')
+        )
+        interests.find_element_by_css_selector("[data-node-id='interests'").click()
 
-        WebDriverWait(self.driver, 30, 1).until(
+        comp_interests = WebDriverWait(interests, 30, 1).until(
             lambda d: d.find_element_by_xpath(
-                '//label[contains(text(), "Компьютерная техника и программы")]'
+                '//span[@data-node-id="Компьютернаятехникаипрограммы"]'
             )
+        )
+        comp_interests.click()
+        comp_interests = comp_interests.parent.find_element_by_class_name('tree__wrapper')
+
+        for element in comp_interests.find_elements_by_class_name("tree__node__input"):
+            element.click()
+
+        chosen_box = interests.find_element_by_class_name('campaign-setting__chosen-box')
+        chosen_value = WebDriverWait(chosen_box, 30, 1).until(
+            lambda d: d.find_element_by_xpath(
+                './/span[text() = "Компьютерная техника и программы"]'
+            )
+        ).parent
+
+        WebDriverWait(interests, 30, 1).until(
+            lambda d: d.find_element_by_class_name(
+                'campaign-setting__chosen-box__item__close')
         ).click()
 
-        income_group = self.driver.find_element_by_css_selector('[data-name="income_group"]')
-        income_group.find_element_by_class_name('campaign-setting__value').click()
+        """ Уровень дохода """
+        income_group = WebDriverWait(self.driver, 30, 1).until(
+            lambda d: d.find_element_by_css_selector('[data-name="income_group"]')
+        )
         WebDriverWait(income_group, 30, 1).until(
-            lambda d: d.find_element_by_xpath(
-                '//label[contains(text(), "Выше среднего")]'
-            )
+            lambda d: d.find_element_by_class_name('campaign-setting__value')
         ).click()
-        #time.sleep(5)
-        #comp_interests.find_element_by_class_name('tree__node__collapse-icon').click()
 
+        for element in income_group.find_elements_by_class_name('campaign-setting__input'):
+            element.click()
+
+        """ Создание объявления """
         banner_form = self.driver.find_element_by_class_name('banner-form')
         title = banner_form.find_element_by_xpath('.//input[@data-name="title"]')
         title.send_keys('see?')
@@ -144,23 +174,37 @@ class ExampleTestCase(unittest.TestCase):
         image = banner_form.find_element_by_xpath('.//input[@data-name="image"]')
         image.send_keys('/home/snake/Pictures/11.jpg')
 
-        WebDriverWait(banner_form, 30, 1).until(
-            lambda d: d.find_element_by_css_selector("[class=banner-preview__img]")
-        )
-        #banner_form.find_element_by_class_name('banner-form__input').click().send_keys('see?')
+        def waiting(d):
+            banners = d.find_elements_by_class_name("banner-preview__img")
+            for banner in banners:
+                if banner.value_of_css_property("display") == 'block':
+                    return banner
 
-        #import time
-        time.sleep(5)
+        banner = WebDriverWait(banner_form, 30, 1).until(waiting)
+
+        WebDriverWait(banner, 30, 1).until(
+            lambda d: (d.value_of_css_property("background-image") is not None)
+        )
+
         submit = banner_form.find_element_by_class_name('banner-form__save-button')
         submit.click()
 
+        """ Размещение объявления """
         self.driver.find_element_by_class_name("main-button-new").click()
         title = WebDriverWait(self.driver, 30, 1).until(
             lambda d: d.find_element_by_class_name("campaign-title")
         )
+
+        """ Проверка результата """
         campaign_name = title.find_element_by_class_name("campaign-title__name").text
-        self.assertEqual(campaign_name, u'Новая кампания 2014-10-17')
-        # elem.send_keys('see?' + Keys.RETURN)
+        self.assertEqual(campaign_name, 'Campaign')
+
+        self.driver.find_element_by_class_name("control__link_edit").click()
+        banner = WebDriverWait(self.driver, 30, 1).until(
+            lambda d: d.find_element_by_class_name("added-banner")
+        )
+        self.assertEqual(banner.find_element_by_class_name("banner-preview__title").text, 'see?')
+
 
 
 if __name__ == '__main__':
