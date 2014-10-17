@@ -1,5 +1,5 @@
 import urlparse
-from tests.components.components_auth import AuthForm
+from tests.components.components_auth import *
 from tests.components.components_campaigns import CampaignsComponent
 
 from tests.components.components_create import *

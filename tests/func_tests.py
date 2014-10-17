@@ -6,16 +6,15 @@ import unittest
 from selenium.webdriver import DesiredCapabilities, Remote
 from selenium.webdriver.support.wait import WebDriverWait
 
-from tests.components.constants import *
+from components.constants import *
 from page_objects.pages import AuthPage, CreatePage, CampaignsPage, EditPage
-from tests.components.components_create import TopMenu
 
 
-class ExampleTestCase(unittest.TestCase):
+class FuncTestCase(unittest.TestCase):
     def setUp(self):
         self.driver = Remote(
             command_executor='http://127.0.0.1:4444/wd/hub',
-            desired_capabilities=DesiredCapabilities.FIREFOX.copy()
+            desired_capabilities=DesiredCapabilities.CHROME.copy()
         )
         auth_page = AuthPage(self.driver)
         auth_page.open()
@@ -55,12 +54,17 @@ class ExampleTestCase(unittest.TestCase):
         self.set_ad_and_pad()
         self.submit_banner()
 
+    def test_auth(self):
+        email = self.create_page.top_menu.get_email()
+        self.assertEqual(Credentials.TTHA2LOGIN + Credentials.DOMAIN, email)
+
     def test_create_campaign_submit_page(self):
         self.set_up_test()
         self.submit_campaign()
         campaign = self.campaigns_page.campaigns_component
         self.assertEqual(campaign.campaign_name, CampaignInfo.CAMPAIGN_NAME)
         self.assertEqual(campaign.banner_name, CampaignInfo.BANNER_TITLE)
+        self.delete_campaign()
 
     def test_create_campaign_edit_page(self):
         self.set_up_test()
@@ -69,6 +73,7 @@ class ExampleTestCase(unittest.TestCase):
         banner_preview = self.edit_page.banner_preview
         self.assertEqual(banner_preview.banner_text, CampaignInfo.BANNER_TEXT)
         self.assertIsNotNone(banner_preview.check_image())
+        self.delete_campaign()
 
     def test_create_campaign_with_interests(self):
         self.set_up_test()
@@ -89,6 +94,7 @@ class ExampleTestCase(unittest.TestCase):
         campaign.open_edit_page()
         interests_check = self.edit_page.interest_box
         self.assertEquals(interests_check.check_comp_interests(), "true")
+        self.delete_campaign()
 
     def test_create_campaign_with_income_group(self):
         self.set_up_test()
@@ -110,53 +116,9 @@ class ExampleTestCase(unittest.TestCase):
         for element in income_group.driver.find_elements_by_class_name(ElementsClasses.INCOME_GROUPS):
             if element.get_attribute("checked") != "true":
                 self.fail("Not all elements are checked")
+        self.delete_campaign()
 
-    def atest_wat(self):
-        email = TopMenu.get_email(self.create_page.top_menu)
-        self.assertEqual(Credentials.TTHA2LOGIN + Credentials.DOMAIN, email)
-
-        """ Название кампании """
-        name_box = self.create_page.campaign_name_box
-        name_box.set_name(CampaignInfo.CAMPAIGN_NAME)
-
-        self.set_ad_and_pad()
-
-        """ Интересы """
-        interests = self.create_page.interests_box
-        interests.click_interests_dropdown()
-
-        interests.click_comp_interests()
-        interests.click_all_comp_interests()
-
-        interests.close_chosen_box()
-
-        """ Уровень дохода """
-        income_group = self.create_page.income_group_box
-        income_group.click_income_dropdown()
-        income_group.click_all_income_groups()
-
-        """ Создание объявления """
-        banner_form = self.create_page.banner_form
-        banner_form.fill_form()
-        banner_form.submit()
-
-        """ Размещение объявления """
-        self.submit_campaign()
-        title = WebDriverWait(self.driver, 30, 1).until(
-            lambda d: d.find_element_by_class_name("campaign-title")
-        )
-
-        """ Проверка результата """
-        campaign_name = title.find_element_by_class_name("campaign-title__name").text
-        self.assertEqual(campaign_name, 'Campaign')
-
-        self.driver.find_element_by_class_name("control__link_edit").click()
-        banner = WebDriverWait(self.driver, 30, 1).until(
-            lambda d: d.find_element_by_class_name("added-banner")
-        )
-        self.assertEqual(banner.find_element_by_class_name("banner-preview__title").text, 'see?')
-
-    def tearDown(self):
+    def delete_campaign(self):
         self.campaigns_page.open()
         self.campaigns_page.campaigns_component.delete_campaign()
 
