@@ -1,23 +1,12 @@
+from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.support.select import Select
+from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.wait import WebDriverWait
-from tests.page_objects.constants import ElementsCSS, ElementsXPath, ElementsClasses, CampaignInfo
+from tests.components.components import Component, ClassComponent
+
+from tests.components.constants import ElementsCSS, ElementsXPath, ElementsClasses, CampaignInfo, Settings
 from tests.page_objects.helpers import webdriver_search_by_css, webdriver_search_by_class, webdriver_search_by_xpath, \
     webdriver_search_by_id
-
-
-class Component(object):
-
-    def __init__(self, driver):
-        self.driver = driver
-
-
-class ClassComponent(Component):
-    ELEMENT_CLASS = None
-
-    def __init__(self, driver):
-        driver = webdriver_search_by_class(driver, self.ELEMENT_CLASS)
-        super(ClassComponent, self).__init__(driver)
 
 
 class TopMenu(Component):
@@ -39,8 +28,21 @@ class CampaignNameBox(ClassComponent):
         return self.name_field
 
     def set_name(self, name):
-        self.name_field.send_keys(Keys.CONTROL, "a")
+        self.name_field.clear()
         self.name_field.send_keys(name)
+
+
+class AdRadioBox(ClassComponent):
+    ELEMENT_CLASS = "base-setting__product-type"
+    ad_choice = None
+
+    def __init__(self, driver):
+        super(AdRadioBox, self).__init__(driver)
+        self.ad_choice = webdriver_search_by_xpath(self.driver, ElementsXPath.AD_LABEL)\
+            .find_element_by_xpath("../input")
+
+    def set_choice(self):
+        self.ad_choice.click()
 
 
 class PadRadioBox(ClassComponent):
@@ -49,7 +51,8 @@ class PadRadioBox(ClassComponent):
 
     def __init__(self, driver):
         super(PadRadioBox, self).__init__(driver)
-        self.pad_choice = webdriver_search_by_xpath(self.driver, ElementsXPath.PAD_CHOICE)
+        self.pad_choice = webdriver_search_by_xpath(self.driver, ElementsXPath.PAD_LABEL)\
+            .find_element_by_xpath("../input")
 
     def set_choice(self):
         self.pad_choice.click()
@@ -84,6 +87,9 @@ class InterestsBox(ClassComponent):
 
         self.comp_interests = comp_interests
 
+    def get_chosen_box_text(self):
+        return webdriver_search_by_class(self.driver, ElementsClasses.CHOSEN_BOX_TEXT).text
+
     def close_chosen_box(self):
         webdriver_search_by_xpath(self.driver, ElementsXPath.CHOSEN_BOX)\
             .parent.find_element_by_class_name("campaign-setting__chosen-box__item__close").click()
@@ -92,14 +98,21 @@ class InterestsBox(ClassComponent):
 class IncomeGroupBox(Component):
     ELEMENT_CSS = "[data-name='income_group']"
     income_groups = None
+    setting_text = None
 
     def __init__(self, driver):
         driver = webdriver_search_by_css(driver, self.ELEMENT_CSS)
         super(IncomeGroupBox, self).__init__(driver)
         self.income_groups = self.driver.find_elements_by_class_name(ElementsClasses.INCOME_GROUPS)
+        self.setting_text = self.driver.find_element_by_class_name(ElementsClasses.CAMPAIGN_SETTING_VALUE)
 
     def click_income_dropdown(self):
-        webdriver_search_by_class(self.driver, ElementsClasses.INCOME_DROPDOWN).click()
+        WebDriverWait(self.driver, Settings.WEBDRIVER_TIMEOUT, Settings.WEBDRIVER_POLL_FREQUENCY).until(
+            expected_conditions.element_to_be_clickable((By.CLASS_NAME, ElementsClasses.INCOME_DROPDOWN))
+        ).click()
+
+    def get_setting_text(self):
+        return self.setting_text.text
 
     def click_all_income_groups(self):
         for income_group in self.income_groups:
@@ -145,26 +158,3 @@ class BannerForm(ClassComponent):
         self.submit_button.click()
 
 
-class AuthForm(Component):
-    ELEMENT_ID = "swa_auth"
-    ID_LOGIN = "id_Login"
-    ID_DOMAIN = "id_Domain"
-    ID_PASSWORD = "id_Password"
-    ID_SUBMIT = "#gogogo>input"
-
-    def __init__(self, driver):
-        driver = webdriver_search_by_id(driver, self.ELEMENT_ID)
-        super(AuthForm, self).__init__(driver)
-
-    def set_login(self, login):
-        self.driver.find_element_by_id(self.ID_LOGIN).send_keys(login)
-
-    def set_password(self, password):
-        self.driver.find_element_by_id(self.ID_PASSWORD).send_keys(password)
-
-    def set_domain(self, domain):
-        select = self.driver.find_element_by_id(self.ID_DOMAIN)
-        Select(select).select_by_visible_text(domain)
-
-    def submit(self):
-        self.driver.find_element_by_css_selector(self.ID_SUBMIT).click()

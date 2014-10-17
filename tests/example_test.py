@@ -3,24 +3,20 @@
 
 import unittest
 
-from page_objects.constants import *
-from page_objects.pages import AuthPage, CreatePage
 from selenium.webdriver import DesiredCapabilities, Remote
-from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.wait import WebDriverWait
-from tests.page_objects.components import TopMenu
+
+from tests.components.constants import *
+from page_objects.pages import AuthPage, CreatePage, CampaignsPage, EditPage
+from tests.components.components_create import TopMenu
 
 
 class ExampleTestCase(unittest.TestCase):
     def setUp(self):
         self.driver = Remote(
             command_executor='http://127.0.0.1:4444/wd/hub',
-            desired_capabilities=DesiredCapabilities.CHROME.copy()
+            desired_capabilities=DesiredCapabilities.FIREFOX.copy()
         )
-        self.addCleanup(self.driver.quit)
-
-    def test_wat(self):
-        import time
         auth_page = AuthPage(self.driver)
         auth_page.open()
         auth_form = auth_page.form
@@ -30,22 +26,103 @@ class ExampleTestCase(unittest.TestCase):
         auth_form.set_domain(Credentials.DOMAIN)
         auth_form.submit()
 
-        create_page = CreatePage(self.driver)
-        create_page.open()
+        self.create_page = CreatePage(self.driver)
+        self.create_page.open()
+        self.campaigns_page = CampaignsPage(self.driver)
+        self.edit_page = EditPage(self.driver)
+        self.addCleanup(self.driver.quit)
 
-        email = TopMenu.get_email(create_page.top_menu)
+    def set_campaign_name(self):
+        name_box = self.create_page.campaign_name_box
+        name_box.set_name(CampaignInfo.CAMPAIGN_NAME)
+
+    def set_ad_and_pad(self):
+        ad_box = self.create_page.ad_radio_box
+        ad_box.set_choice()
+        pad_box = self.create_page.pad_radio_box
+        pad_box.set_choice()
+
+    def submit_banner(self):
+        banner_form = self.create_page.banner_form
+        banner_form.fill_form()
+        banner_form.submit()
+
+    def submit_campaign(self):
+        self.driver.find_element_by_class_name(ElementsClasses.SUBMIT_CAMPAIGN).click()
+
+    def set_up_test(self):
+        self.set_campaign_name()
+        self.set_ad_and_pad()
+        self.submit_banner()
+
+    def test_create_campaign_submit_page(self):
+        self.set_up_test()
+        self.submit_campaign()
+        campaign = self.campaigns_page.campaigns_component
+        self.assertEqual(campaign.campaign_name, CampaignInfo.CAMPAIGN_NAME)
+        self.assertEqual(campaign.banner_name, CampaignInfo.BANNER_TITLE)
+
+    def test_create_campaign_edit_page(self):
+        self.set_up_test()
+        self.submit_campaign()
+        self.campaigns_page.campaigns_component.open_edit_page()
+        banner_preview = self.edit_page.banner_preview
+        self.assertEqual(banner_preview.banner_text, CampaignInfo.BANNER_TEXT)
+        self.assertIsNotNone(banner_preview.check_image())
+
+    def test_create_campaign_with_interests(self):
+        self.set_up_test()
+        interests = self.create_page.interests_box
+        interests.click_interests_dropdown()
+
+        interests.click_comp_interests()
+        interests.click_all_comp_interests()
+
+        def assert_equal_interests(ins):
+            return ins.get_chosen_box_text() == CampaignInfo.INTERESTS
+
+        WebDriverWait(interests, Settings.WEBDRIVER_TIMEOUT, Settings.WEBDRIVER_POLL_FREQUENCY)\
+            .until(assert_equal_interests)
+
+        self.submit_campaign()
+        campaign = self.campaigns_page.campaigns_component
+        campaign.open_edit_page()
+        interests_check = self.edit_page.interest_box
+        self.assertEquals(interests_check.check_comp_interests(), "true")
+
+    def test_create_campaign_with_income_group(self):
+        self.set_up_test()
+        income_group = self.create_page.income_group_box
+        income_group.click_income_dropdown()
+        income_group.click_all_income_groups()
+
+        def assert_equal_text(*args):
+            return income_group.get_setting_text() == Settings.CHOSEN
+
+        WebDriverWait(income_group, Settings.WEBDRIVER_TIMEOUT, Settings.WEBDRIVER_POLL_FREQUENCY)\
+            .until(assert_equal_text)
+
+        self.submit_campaign()
+        campaign = self.campaigns_page.campaigns_component
+        campaign.open_edit_page()
+        income_group = self.edit_page.income_group_box
+        income_group.click_income_dropdown()
+        for element in income_group.driver.find_elements_by_class_name(ElementsClasses.INCOME_GROUPS):
+            if element.get_attribute("checked") != "true":
+                self.fail("Not all elements are checked")
+
+    def atest_wat(self):
+        email = TopMenu.get_email(self.create_page.top_menu)
         self.assertEqual(Credentials.TTHA2LOGIN + Credentials.DOMAIN, email)
 
         """ Название кампании """
-        name_box = create_page.campaign_name_box
+        name_box = self.create_page.campaign_name_box
         name_box.set_name(CampaignInfo.CAMPAIGN_NAME)
 
-        """ Площадка размещения """
-        pad_box = create_page.pad_radio_box
-        pad_box.set_choice()
+        self.set_ad_and_pad()
 
         """ Интересы """
-        interests = create_page.interests_box
+        interests = self.create_page.interests_box
         interests.click_interests_dropdown()
 
         interests.click_comp_interests()
@@ -54,19 +131,17 @@ class ExampleTestCase(unittest.TestCase):
         interests.close_chosen_box()
 
         """ Уровень дохода """
-        income_group = create_page.income_group_box
-
+        income_group = self.create_page.income_group_box
         income_group.click_income_dropdown()
-
         income_group.click_all_income_groups()
 
         """ Создание объявления """
-        banner_form = create_page.banner_form
+        banner_form = self.create_page.banner_form
         banner_form.fill_form()
         banner_form.submit()
 
         """ Размещение объявления """
-        self.driver.find_element_by_class_name("main-button-new").click()
+        self.submit_campaign()
         title = WebDriverWait(self.driver, 30, 1).until(
             lambda d: d.find_element_by_class_name("campaign-title")
         )
@@ -80,6 +155,10 @@ class ExampleTestCase(unittest.TestCase):
             lambda d: d.find_element_by_class_name("added-banner")
         )
         self.assertEqual(banner.find_element_by_class_name("banner-preview__title").text, 'see?')
+
+    def tearDown(self):
+        self.campaigns_page.open()
+        self.campaigns_page.campaigns_component.delete_campaign()
 
 
 

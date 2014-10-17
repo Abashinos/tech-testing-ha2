@@ -1,5 +1,6 @@
 from selenium.webdriver.support.wait import WebDriverWait
-from tests.page_objects.constants import Settings
+
+from tests.components.constants import Settings
 
 
 def webdriver_search_by_class(driver, class_name):

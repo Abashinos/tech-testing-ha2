@@ -1,5 +1,9 @@
 import urlparse
-from tests.page_objects.components import *
+from tests.components.components_auth import AuthForm
+from tests.components.components_campaigns import CampaignsComponent
+
+from tests.components.components_create import *
+from tests.components.components_edit import BannerPreview, InterestBox
 
 
 class Page(object):
@@ -34,6 +38,10 @@ class CreatePage(Page):
         return CampaignNameBox(self.driver)
 
     @property
+    def ad_radio_box(self):
+        return AdRadioBox(self.driver)
+
+    @property
     def pad_radio_box(self):
         return PadRadioBox(self.driver)
 
@@ -52,3 +60,23 @@ class CreatePage(Page):
     pass
 
 
+class CampaignsPage(Page):
+    PATH = "/ads/campaigns"
+
+    @property
+    def campaigns_component(self):
+        return CampaignsComponent(self.driver)
+
+
+class EditPage(Page):
+    @property
+    def banner_preview(self):
+        return BannerPreview(self.driver)
+
+    @property
+    def interest_box(self):
+        return InterestBox(self.driver)
+
+    @property
+    def income_group_box(self):
+        return IncomeGroupBox(self.driver)
