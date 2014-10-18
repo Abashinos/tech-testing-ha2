@@ -10,8 +10,8 @@ class Settings(object):
 
 
 class Credentials(object):
-    TTHA2LOGIN = os.environ['TTHA2LOGIN']
-    TTHA2PASSWORD = os.environ['TTHA2PASSWORD']
+    TTHA2LOGIN = 'tech-testing-ha2-1'  # os.environ['TTHA2LOGIN']
+    TTHA2PASSWORD = 'Pa$$w0rD-1'  # os.environ['TTHA2PASSWORD']
     DOMAIN = '@bk.ru'
 
 
@@ -34,7 +34,6 @@ class ElementsClasses(object):
     INCOME_GROUPS = "campaign-setting__input"
     BANNER_PREVIEW = "banner-preview__img"
     BANNER_SUBMIT = "banner-form__save-button"
-    SUBMIT_CAMPAIGN = "main-button-new"
     CAMPAIGN_TITLE = "campaign-title__name"
     BANNER_NAME = "banner-cell-name__name"
     BANNER_PREVIEW_TEXT = "banner-preview__text"

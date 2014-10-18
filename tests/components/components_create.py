@@ -87,8 +87,17 @@ class InterestsBox(ClassComponent):
 
         self.comp_interests = comp_interests
 
-    def get_chosen_box_text(self):
-        return webdriver_search_by_class(self.driver, ElementsClasses.CHOSEN_BOX_TEXT).text
+    @staticmethod
+    def check_interests(driver):
+        WebDriverWait(driver, Settings.WEBDRIVER_TIMEOUT, Settings.WEBDRIVER_POLL_FREQUENCY).until_not(
+            expected_conditions.staleness_of(webdriver_search_by_class(driver, ElementsClasses.CHOSEN_BOX_TEXT))
+        )
+        if webdriver_search_by_class(driver, ElementsClasses.CHOSEN_BOX_TEXT).text == CampaignInfo.INTERESTS:
+            return True
+
+    def wait_for_chosen_box(self):
+        WebDriverWait(self.driver, Settings.WEBDRIVER_TIMEOUT, Settings.WEBDRIVER_POLL_FREQUENCY)\
+            .until(self.check_interests)
 
     def close_chosen_box(self):
         webdriver_search_by_xpath(self.driver, ElementsXPath.CHOSEN_BOX)\
@@ -111,8 +120,13 @@ class IncomeGroupBox(Component):
             expected_conditions.element_to_be_clickable((By.CLASS_NAME, ElementsClasses.INCOME_DROPDOWN))
         ).click()
 
-    def get_setting_text(self):
-        return self.setting_text.text
+    def assert_equal_text(self, *args):
+        if self.setting_text.text == Settings.CHOSEN:
+            return True
+
+    def check_income_text(self):
+        WebDriverWait(self.driver, Settings.WEBDRIVER_TIMEOUT, Settings.WEBDRIVER_POLL_FREQUENCY)\
+            .until(self.assert_equal_text)
 
     def click_all_income_groups(self):
         for income_group in self.income_groups:
@@ -158,3 +172,11 @@ class BannerForm(ClassComponent):
         self.submit_button.click()
 
 
+class SubmitButton(ClassComponent):
+    ELEMENT_CLASS = "main-button-new"
+
+    def __init__(self, driver):
+        super(SubmitButton, self).__init__(driver)
+
+    def click(self):
+        self.driver.click()
