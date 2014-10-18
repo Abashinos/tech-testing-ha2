@@ -10,8 +10,8 @@ class Settings(object):
 
 
 class Credentials(object):
-    TTHA2LOGIN = 'tech-testing-ha2-1'  # os.environ['TTHA2LOGIN']
-    TTHA2PASSWORD = 'Pa$$w0rD-1'  # os.environ['TTHA2PASSWORD']
+    TTHA2LOGIN = os.environ['TTHA2LOGIN']
+    TTHA2PASSWORD = os.environ['TTHA2PASSWORD']
     DOMAIN = '@bk.ru'
 
 
