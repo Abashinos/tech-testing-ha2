@@ -124,6 +124,12 @@ class IncomeGroupBox(Component):
         if self.setting_text.text == Settings.CHOSEN:
             return True
 
+    def check_all_groups_checked(self):
+        for element in self.driver.find_elements_by_class_name(ElementsClasses.INCOME_GROUPS):
+            if element.get_attribute("checked") != "true":
+                return False
+        return True
+
     def check_income_text(self):
         WebDriverWait(self.driver, Settings.WEBDRIVER_TIMEOUT, Settings.WEBDRIVER_POLL_FREQUENCY)\
             .until(self.assert_equal_text)

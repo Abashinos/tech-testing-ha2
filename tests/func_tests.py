@@ -71,9 +71,8 @@ class FuncTestCase(unittest.TestCase):
         campaign.open_edit_page()
         income_group = self.edit_page.income_group_box
         income_group.click_income_dropdown()
-        for element in income_group.driver.find_elements_by_class_name(ElementsClasses.INCOME_GROUPS):
-            if element.get_attribute("checked") != "true":
-                self.fail("Not all elements are checked")
+        self.assertTrue(income_group.check_all_groups_checked())
+
         self.delete_campaign()
 
     def delete_campaign(self):
